@@ -22,11 +22,12 @@ class View:
     color_light = COLOR_LIGHT
     color_highlight = COLOR_HIGHLIGHT
 
-    def __init__(self, parent):
+    def __init__(self, parent, controller):
+        self.controller = controller
         self.parent = parent
         self.__create_visual()
-        self.canvas.bind('<Button-1>', lambda x: contr.on_square_clicked(self, x))
-        contr.start_new_game(self)
+        self.canvas.bind('<Button-1>', self.controller.on_square_clicked)
+        self.controller.start_new_game(self)
 
     def __create_visual(self):
         self.__create_menu()
@@ -38,7 +39,7 @@ class View:
     def __create_menu(self):
         menu_bar = Menu(self.parent)
         file_menu = Menu(menu_bar, tearoff=0)
-        file_menu.add_command(label='Nytt spill', command=lambda: contr.start_new_game(self))
+        file_menu.add_command(label='Nytt spill', command=lambda: self.controller.start_new_game(self))
         menu_bar.add_cascade(label='Fil', menu=file_menu)
         self.parent.config(menu=menu_bar)
 
@@ -57,7 +58,7 @@ class View:
                 y_top_left = (7 - row) * DIMENSION_OF_SQUARES
                 x_bottom_right = x_top_left + DIMENSION_OF_SQUARES
                 y_bottom_right = y_top_left + DIMENSION_OF_SQUARES
-                if self.highlighted_squares and (row, col) in self.highlighted_squares:
+                if self.highlighted_squares and (col, row) in self.highlighted_squares:
                     self.canvas.create_rectangle(x_top_left, y_top_left, x_bottom_right, y_bottom_right,
                                                  fill=self.color_highlight)
                 else:
@@ -88,9 +89,7 @@ class View:
     def delete_single_piece(self, pos):
         self.canvas.delete(pos)
 
-    def make_move(self, pos_from, pos_to):
-        piece_from = contr.get_piece_at_position(pos_from)
-        piece_to = contr.get_piece_at_position(pos_to)
+    def make_move(self, pos_from, pos_to, piece_from, piece_to):
         if piece_from:
             self.canvas.delete(pos_from)
             if piece_to:
@@ -115,6 +114,14 @@ class View:
             scrollbar.pack(side=RIGHT, fill=Y)
             self.moves_display.config(yscrollcommand=scrollbar.set)
             scrollbar.config(command=self.moves_display.yview)
+
+    def update_highlight_list(self, model, highlight_list):
+        self.highlighted_squares = []
+        for pos in highlight_list:
+            num_pos = contr.get_numeric_position(pos)
+            self.highlighted_squares.append(num_pos)
+        self.__draw_board()
+        self.draw_all_pieces(model)
 
     def update_move_history(self, move_nr, color, move):
         self.moves_display.config(state=NORMAL)
