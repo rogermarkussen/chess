@@ -32,6 +32,26 @@ class Model(dict):
         history = []
         can_castle = {'white': True, 'black': True}
 
+    def get_movetext(self, pos_from, pos_to, piece_dest):
+        hit = 'x' if piece_dest else ''
+        piece_name = self[pos_to].upper() if self[pos_to].lower() != 'p' else ''
+        if piece_dest:
+            piece_name = self[pos_to].upper() if self[pos_to].lower() != 'p' else pos_from[0]
+        movetext = piece_name + hit + pos_to
+        if self[pos_to].lower() not in ['r', 'n']:
+            return movetext
+        for pos, piece_abbr in self.items():
+            if piece_abbr == self[pos_to] and pos != pos_to:
+                tmp = deepcopy(self)
+                del tmp[pos_to]
+                piece = self.get_piece_at_position(pos)
+                other_move_list = rules.moves_available(tmp, pos, piece['name'], piece['color'])
+                if pos_to in other_move_list:
+                    movetext = piece_name + pos_from[0] + hit + pos_to
+                    if pos[0] == pos_from[0]:
+                        movetext = piece_name + pos_from[1] + hit + pos_to
+        return movetext
+
     def update_game_stats(self, piece, piece_dest, color, pos_from, pos_to):
         enemy = 'white' if color == 'black' else 'black'
         if color == 'black':
@@ -41,11 +61,9 @@ class Model(dict):
         if piece_name == 'P':
             piece_name = ''
             self.halfmove_clock = 0
-        if not piece_dest:
-            movetext = piece_name + pos_to
-        else:
+        movetext = self.get_movetext(pos_from, pos_to, piece_dest)
+        if piece_dest:
             self.captured_pieces[enemy].append(piece_dest)
-            movetext = piece_name + 'x' + pos_to
             self.halfmove_clock = 0
         self.history.append(movetext)
         self.player_turn = enemy
@@ -82,7 +100,7 @@ class Model(dict):
         else:
             self.move(pos_from, pos_to)
             self.update_game_stats(piece, piece_at_destination, color, pos_from, pos_to)
-            return True, piece, piece_at_destination, norwegian_enemy_color
+            return True, norwegian_enemy_color
 
     def will_move_cause_check(self, pos_from, pos_to):
         color = get_color(self[pos_from])
@@ -103,17 +121,15 @@ class Model(dict):
 
     def get_available_moves(self, pos):
         if pos in self.keys():
-            piece_name = PIECE_NAME[self[pos].upper()]
-            piece_color = get_color(self[pos])
-            return rules.moves_available(self, pos, piece_name, piece_color)
+            piece = self.get_piece_at_position(pos)
+            return rules.moves_available(self, pos, piece['name'], piece['color'])
 
     def get_all_available_moves(self, color):
         result = []
-        for pos, piece in self.items():
-            piece_name = PIECE_NAME[self[pos].upper()]
-            piece_color = get_color(self[pos])
-            if piece_color == color:
-                moves = rules.moves_available(self, pos, piece_name, piece_color)
+        for pos in self.keys():
+            piece = self.get_piece_at_position(pos)
+            if piece['color'] == color:
+                moves = rules.moves_available(self, pos, piece['name'], piece['color'])
                 if moves:
                     result.extend(moves)
         return result
@@ -127,3 +143,9 @@ class Model(dict):
             if get_color(piece) == color:
                 occupied.append(pos)
         return occupied
+
+    def get_piece_at_position(self, pos):
+        piece = None
+        if pos in self.keys():
+            piece = dict(name=PIECE_NAME[self[pos].upper()], color=get_color(self[pos]))
+        return piece
