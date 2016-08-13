@@ -15,7 +15,9 @@ class Model(dict):
     halfmove_clock = 0
     move_nr = 1
     history = []
-    can_castle = {'white': True, 'black': True}
+    can_castle_short = {'white': True, 'black': True}
+    can_castle_long = {'white': True, 'black': True}
+    moves = {'white': [], 'black': []}
 
     def __init__(self, *arg, **kw):
         super(Model, self).__init__(*arg, **kw)
@@ -67,9 +69,30 @@ class Model(dict):
             self.halfmove_clock = 0
         self.history.append(movetext)
         self.player_turn = enemy
+        # Castling
+        if piece_name == 'K':
+            self.can_castle_short[color] = False
+            self.can_castle_long[color] = False
+        if piece_name == 'R':
+            if pos_from[0] == 'h':
+                self.can_castle_short[color] = False
+            if pos_from[0] == 'a':
+                self.can_castle_long[color] = False
 
     def move(self, pos_from, pos_to):
+        castle_short = False
+        castle_long = False
+        row = pos_from[1]
+        is_king_move = self[pos_from].lower() == 'k'
         self[pos_to] = self.pop(pos_from, None)
+        if is_king_move and pos_from[0] == 'e' and pos_to[0] == 'g':
+            castle_short = True
+        if is_king_move and pos_from[0] == 'e' and pos_to[0] == 'c':
+            castle_long = True
+        if castle_short:
+            self['f{}'.format(row)] = self.pop('h{}'.format(row), None)
+        if castle_long:
+            self['d{}'.format(row)] = self.pop('a{}'.format(row), None)
 
     def move_validation(self, pos_from, pos_to):
         piece = None

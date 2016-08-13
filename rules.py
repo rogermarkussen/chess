@@ -29,6 +29,8 @@ def moves_available(model, pos, piece, color):
         return knight_moves(model, pos, color)
     if piece == 'Pawn':
         return pawn_moves(model, pos, color)
+    if piece == 'King':
+        return king_moves(model, pos, color)
     allowed_moves = []
     directions, distance = get_directions_and_distance(piece)
     start_col, start_row = contr.get_numeric_position(pos)
@@ -89,3 +91,53 @@ def pawn_moves(model, pos, color):
         if destination_attack in model.all_positions_occupied_by_color(enemy):
             allowed_moves.append(destination_attack)
     return allowed_moves
+
+
+def king_moves(model, pos, color):
+    allowed_moves = []
+    directions, distance = get_directions_and_distance('King')
+    start_col, start_row = contr.get_numeric_position(pos)
+    for x, y in directions:
+        num_dest = start_col + x, start_row + y
+        if not is_on_board(*num_dest):
+            continue
+        destination = contr.get_text_position(*num_dest)
+        if destination not in model.all_positions_occupied_by_color(color):
+            allowed_moves.append(destination)
+    allowed_moves.extend(get_castle_moves(model, pos, color))
+    return allowed_moves
+
+
+def get_castle_moves(model, pos, color):
+    castle_moves = []
+    row = '1' if color == 'white' else '8'
+    enemy = 'white' if color == 'black' else 'black'
+    enemy_available_moves = model.moves[enemy]
+    king_pos = 'e{}'.format(row)
+    if pos != king_pos:
+        return []
+    if pos in enemy_available_moves:
+        return []
+    if model.can_castle_short[color]:
+        short_castle = True
+        active_squares = ['f{}'.format(row), 'g{}'.format(row)]
+        for square in active_squares:
+            if square in model.keys():
+                short_castle = False
+            if square in enemy_available_moves:
+                short_castle = False
+        if short_castle:
+            castle_moves.append('g{}'.format(row))
+    if model.can_castle_long[color]:
+        long_castle = True
+        active_squares = ['d{}'.format(row), 'c{}'.format(row)]
+        for square in active_squares:
+            if square in model.keys():
+                long_castle = False
+            if square in enemy_available_moves:
+                long_castle = False
+        if 'b{}'.format(row) in model.keys():
+            long_castle = False
+        if long_castle:
+            castle_moves.append('c{}'.format(row))
+    return castle_moves

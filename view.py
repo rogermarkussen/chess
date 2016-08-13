@@ -87,6 +87,7 @@ class View:
         self.canvas.delete(pos)
 
     def make_move(self, pos_from, pos_to, piece):
+        row = pos_from[1]
         piece_abbr = piece['name'][0].upper() if piece['name'] != 'Knight' else 'N'
         if piece['color'] == 'black':
             piece_abbr = piece_abbr.lower()
@@ -94,6 +95,14 @@ class View:
         self.canvas.delete(pos_to)
         self.__draw_single_piece(pos_to, piece_abbr)
         self.selected_piece_position = None
+        if piece['name'] == 'King' and pos_from[0] == 'e' and pos_to[0] == 'g':
+            # Castle short
+            rook_piece = {'name': 'Rook', 'color': piece['color']}
+            self.make_move('h{}'.format(row), 'f{}'.format(row), rook_piece)
+        if piece['name'] == 'King' and pos_from[0] == 'e' and pos_to[0] == 'c':
+            # Castle long
+            rook_piece = {'name': 'Rook', 'color': piece['color']}
+            self.make_move('a{}'.format(row), 'd{}'.format(row), rook_piece)
 
     def __create_bottom_label(self):
         self.bottom_label = Label(self.parent, text='Hvit skal starte spillet', font=('Arial', 15))

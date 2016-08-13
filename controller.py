@@ -26,6 +26,7 @@ class Controller:
         clicked_column = event.x // col_size
         clicked_row = 7 - (event.y // row_size)
         position = get_text_position(clicked_column, clicked_row)
+        self.produce_all_available_moves()
         available_moves = self.model.get_available_moves(position)
 
         if not self.view.selected_piece_position:
@@ -58,3 +59,7 @@ class Controller:
     def start_new_game(self, view):
         self.view = view
         self.view.draw_all_pieces(START_POSITION)
+
+    def produce_all_available_moves(self):
+        self.model.moves['white'] = self.model.get_all_available_moves('white')
+        self.model.moves['black'] = self.model.get_all_available_moves('black')
