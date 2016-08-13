@@ -68,9 +68,9 @@ def pawn_moves(model, pos, color):
     allowed_moves = []
     start_col, start_row = contr.get_numeric_position(pos)
     if color == 'white':
-        initial_row_position, direction, enemy = 1, 1, 'black'
+        initial_row_position, direction, enemy, en_passant_row = 1, 1, 'black', 4
     else:
-        initial_row_position, direction, enemy = 6, -1, 'white'
+        initial_row_position, direction, enemy, en_passant_row = 6, -1, 'white', 3
     # Moving forward
     forbidden = model.all_occupied_positions()
     num_dest = start_col, start_row + direction
@@ -90,6 +90,26 @@ def pawn_moves(model, pos, color):
         destination_attack = contr.get_text_position(*num_dest_attack)
         if destination_attack in model.all_positions_occupied_by_color(enemy):
             allowed_moves.append(destination_attack)
+    # En passant
+    if start_row == en_passant_row:
+        can_do_en_passant = ''
+        enemy_pawn_on_side_and_free_pos_in_front = []
+        for a in range(-1, 2, 2):
+            side_position = (start_col + a, start_row)
+            dest_position = (start_col + a, start_row + direction)
+            if is_on_board(*side_position):
+                text_side_position = contr.get_text_position(*side_position)
+                text_dest_position = contr.get_text_position(*dest_position)
+                if text_side_position in model.keys() and text_dest_position not in model.keys():
+                    side_piece = model[text_side_position].lower()
+                    side_color = 'white' if model[text_side_position].isupper() else 'black'
+                    if side_piece == 'p' and side_color == enemy:
+                        enemy_pawn_on_side_and_free_pos_in_front.append([text_side_position, text_dest_position])
+        if not enemy_pawn_on_side_and_free_pos_in_front:
+            return allowed_moves
+        for entry in enemy_pawn_on_side_and_free_pos_in_front:
+            if model.history[-1] == entry[0] and entry[1] not in model.history:
+                allowed_moves.append(entry[1])
     return allowed_moves
 
 

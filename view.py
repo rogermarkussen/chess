@@ -86,7 +86,7 @@ class View:
     def delete_single_piece(self, pos):
         self.canvas.delete(pos)
 
-    def make_move(self, pos_from, pos_to, piece):
+    def make_move(self, pos_from, pos_to, piece, en_passant):
         row = pos_from[1]
         piece_abbr = piece['name'][0].upper() if piece['name'] != 'Knight' else 'N'
         if piece['color'] == 'black':
@@ -103,6 +103,9 @@ class View:
             # Castle long
             rook_piece = {'name': 'Rook', 'color': piece['color']}
             self.make_move('a{}'.format(row), 'd{}'.format(row), rook_piece)
+        if en_passant:
+            captured_pawn_pos = pos_to[0] + pos_from[1]
+            self.canvas.delete(captured_pawn_pos)
 
     def __create_bottom_label(self):
         self.bottom_label = Label(self.parent, text='Hvit skal starte spillet', font=('Arial', 15))

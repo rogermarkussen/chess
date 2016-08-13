@@ -36,7 +36,7 @@ class Controller:
                 self.view.update_highlight_list(available_moves)
         else:
             try:
-                is_validated, norwegian_color = self.model.move_validation(self.view.selected_piece_position, position)
+                is_validated, norwegian_color, en_passant = self.model.move_validation(self.view.selected_piece_position, position)
             except exceptions.ChessError as error:
                 is_validated = False
                 self.view.bottom_label['text'] = error.__class__.__name__
@@ -46,7 +46,7 @@ class Controller:
 
             if is_validated:
                 piece = self.model.get_piece_at_position(position)
-                self.view.make_move(self.view.selected_piece_position, position, piece)
+                self.view.make_move(self.view.selected_piece_position, position, piece, en_passant)
                 self.view.reset_highlight()
                 self.view.update_move_history(self.model.move_nr, piece['color'], self.model.history[-1])
             else:

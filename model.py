@@ -54,7 +54,7 @@ class Model(dict):
                         movetext = piece_name + pos_from[1] + hit + pos_to
         return movetext
 
-    def update_game_stats(self, piece, piece_dest, color, pos_from, pos_to):
+    def update_game_stats(self, piece, piece_dest, color, pos_from, pos_to, castle_short, castle_long, en_passant):
         enemy = 'white' if color == 'black' else 'black'
         if color == 'black':
             self.move_nr += 1
@@ -67,6 +67,13 @@ class Model(dict):
         if piece_dest:
             self.captured_pieces[enemy].append(piece_dest)
             self.halfmove_clock = 0
+        if castle_short:
+            movetext = '0-0'
+        if castle_long:
+            movetext = '0-0-0'
+        if en_passant:
+            self.captured_pieces[enemy].append('p' if color == 'white' else 'P')
+            movetext = '{}x{}'.format(pos_from[0], pos_to)
         self.history.append(movetext)
         self.player_turn = enemy
         # Castling
@@ -82,6 +89,11 @@ class Model(dict):
     def move(self, pos_from, pos_to):
         castle_short = False
         castle_long = False
+        en_passant = False
+        if self[pos_from].lower() == 'p' and pos_to not in self.keys() and pos_to[0] != pos_from[0]:
+            en_passant = True
+            captured_pawn_pos = pos_to[0] + pos_from[1]
+            del self[captured_pawn_pos]
         row = pos_from[1]
         is_king_move = self[pos_from].lower() == 'k'
         self[pos_to] = self.pop(pos_from, None)
@@ -93,6 +105,7 @@ class Model(dict):
             self['f{}'.format(row)] = self.pop('h{}'.format(row), None)
         if castle_long:
             self['d{}'.format(row)] = self.pop('a{}'.format(row), None)
+        return castle_short, castle_long, en_passant
 
     def move_validation(self, pos_from, pos_to):
         piece = None
@@ -121,9 +134,9 @@ class Model(dict):
         elif not moves_available:
             raise exceptions.Draw
         else:
-            self.move(pos_from, pos_to)
-            self.update_game_stats(piece, piece_at_destination, color, pos_from, pos_to)
-            return True, norwegian_enemy_color
+            castle_short, castle_long, en_passant = self.move(pos_from, pos_to)
+            self.update_game_stats(piece, piece_at_destination, color, pos_from, pos_to, castle_short, castle_long, en_passant)
+            return True, norwegian_enemy_color, en_passant
 
     def will_move_cause_check(self, pos_from, pos_to):
         color = get_color(self[pos_from])
