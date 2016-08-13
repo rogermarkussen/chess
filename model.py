@@ -32,7 +32,9 @@ class Model(dict):
         halfmove_clock = 0
         move_nr = 1
         history = []
-        can_castle = {'white': True, 'black': True}
+        can_castle_short = {'white': True, 'black': True}
+        can_castle_long = {'white': True, 'black': True}
+        moves = {'white': [], 'black': []}
 
     def get_movetext(self, pos_from, pos_to, piece_dest):
         hit = 'x' if piece_dest else ''
@@ -185,3 +187,9 @@ class Model(dict):
         if pos in self.keys():
             piece = dict(name=PIECE_NAME[self[pos].upper()], color=get_color(self[pos]))
         return piece
+
+    def check_if_won(self):
+        available_moves = self.moves[self.player_turn]
+        color_won = 'Hvit' if self.player_turn == 'black' else 'Sort'
+        if self.is_king_under_check(self.player_turn) and not available_moves:
+            return 'Det er sjakk matt! {} har vunnet spillet.'.format(color_won)

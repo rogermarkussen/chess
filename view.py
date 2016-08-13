@@ -25,11 +25,11 @@ class View:
     def __init__(self, parent, controller):
         self.controller = controller
         self.parent = parent
-        self.__create_visual()
+        self.create_visual()
         self.canvas.bind('<Button-1>', self.controller.on_square_clicked)
         self.controller.start_new_game(self)
 
-    def __create_visual(self):
+    def create_visual(self):
         self.__create_menu()
         self.__create_canvas()
         self.__draw_board()
@@ -95,17 +95,17 @@ class View:
         self.canvas.delete(pos_to)
         self.__draw_single_piece(pos_to, piece_abbr)
         self.selected_piece_position = None
-        if piece['name'] == 'King' and pos_from[0] == 'e' and pos_to[0] == 'g':
-            # Castle short
-            rook_piece = {'name': 'Rook', 'color': piece['color']}
-            self.make_move('h{}'.format(row), 'f{}'.format(row), rook_piece)
-        if piece['name'] == 'King' and pos_from[0] == 'e' and pos_to[0] == 'c':
-            # Castle long
-            rook_piece = {'name': 'Rook', 'color': piece['color']}
-            self.make_move('a{}'.format(row), 'd{}'.format(row), rook_piece)
         if en_passant:
             captured_pawn_pos = pos_to[0] + pos_from[1]
             self.canvas.delete(captured_pawn_pos)
+        if piece['name'] == 'King' and pos_from[0] == 'e' and pos_to[0] == 'g':
+            # Castle short
+            rook_piece = {'name': 'Rook', 'color': piece['color']}
+            self.make_move('h{}'.format(row), 'f{}'.format(row), rook_piece, False)
+        if piece['name'] == 'King' and pos_from[0] == 'e' and pos_to[0] == 'c':
+            # Castle long
+            rook_piece = {'name': 'Rook', 'color': piece['color']}
+            self.make_move('a{}'.format(row), 'd{}'.format(row), rook_piece, False)
 
     def __create_bottom_label(self):
         self.bottom_label = Label(self.parent, text='Hvit skal starte spillet', font=('Arial', 15))
@@ -143,6 +143,11 @@ class View:
             self.moves_display.insert(INSERT, '\t\t{}'.format(move))
         self.moves_display.config(state=DISABLED)
         self.moves_display.yview(END)
+
+    def reset_history(self):
+        self.moves_display.config(state=NORMAL)
+        self.moves_display.delete(1.0, END)
+        self.bottom_label['text'] = 'Hvit skal starte spillet'
 
     def reset_board_state(self):
         self.selected_piece_position = None
