@@ -27,7 +27,12 @@ class Controller:
         clicked_row = 7 - (event.y // row_size)
         position = get_text_position(clicked_column, clicked_row)
         self.produce_all_available_moves()
-        available_moves = self.model.get_available_moves(position)
+        available_moves = self.model.get_available_moves(position) if self.model.get_available_moves(position) else []
+        tmp_av_moves = available_moves[:]
+        for move in available_moves:
+            if self.model.will_move_cause_check(position, move):
+                tmp_av_moves.remove(move)
+        available_moves = tmp_av_moves
 
         if not self.view.selected_piece_position:
             piece = self.model.get_piece_at_position(position)

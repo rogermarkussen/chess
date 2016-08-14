@@ -1,3 +1,4 @@
+from copy import deepcopy
 import controller as contr
 from config import *
 

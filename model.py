@@ -128,7 +128,7 @@ class Model(dict):
         moves_available = rules.moves_available(self, pos_from, piece_name, color)
         if pos_to not in moves_available:
             raise exceptions.InvalidMove
-        if self.get_all_available_moves(enemy):
+        if self.moves[enemy]:
             if self.will_move_cause_check(pos_from, pos_to):
                 raise exceptions.Check
         if not moves_available and self.is_king_under_check(color):
@@ -137,7 +137,8 @@ class Model(dict):
             raise exceptions.Draw
         else:
             castle_short, castle_long, en_passant = self.move(pos_from, pos_to)
-            self.update_game_stats(piece, piece_at_destination, color, pos_from, pos_to, castle_short, castle_long, en_passant)
+            self.update_game_stats(piece, piece_at_destination, color, pos_from, pos_to,
+                                   castle_short, castle_long, en_passant)
             return True, norwegian_enemy_color, en_passant
 
     def will_move_cause_check(self, pos_from, pos_to):
