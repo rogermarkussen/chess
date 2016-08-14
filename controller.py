@@ -44,12 +44,23 @@ class Controller:
             available_moves = self.filter_check_moves(selected_piece_pos, available_moves)
             if position in available_moves:
                 self.make_move(selected_piece_pos, position, piece)
-                norwegian_color = 'hvit' if piece['color'] == 'black' else 'sort'
-                self.view.update_bottom_label('Det er {} sin tur'.format(norwegian_color))
+                norwegian_color_turn = 'hvit' if self.model.player_turn == 'black' else 'sort'
+                self.view.update_bottom_label('Det er {} sin tur'.format(norwegian_color_turn))
                 self.produce_all_available_moves()
+                if self.check_for_mate():
+                    player_won = 'white' if self.model.player_turn == 'black' else 'black'
+                    norwegian_color_won = 'hvit' if self.model.player_turn == 'black' else 'sort'
+                    self.view.update_bottom_label('Sjakk matt! Det er {} som har vunnet.'.format(norwegian_color_won))
+                    self.view.add_mate_to_move_history(player_won)
+                    return
+                if self.check_for_stalemate():
+                    self.view.update_bottom_label('Patt! Partiet endte med remis.')
+                    self.view.add_stalemate_to_move_history()
+                    return
+                if self.model.is_king_under_check(self.model.player_turn):
+                    self.view.add_check_to_move_history()
             else:
-                self.view.reset_highlight_list()
-                self.view.selected_piece_position = None
+                self.view.reset_board_state()
 
     def filter_check_moves(self, pos, moves):
         copy_of_moves = moves[:]
@@ -68,8 +79,33 @@ class Controller:
         self.view.reset_board_state()
 
     def produce_all_available_moves(self):
-        self.model.get_all_available_moves('white')
-        self.model.get_all_available_moves('black')
+        all_white_moves = []
+        white_pieces = self.model.all_positions_occupied_by_color('white')
+        for pos in white_pieces:
+            moves = self.model.get_available_moves(pos)
+            white_moves_not_in_check = self.filter_check_moves(pos, moves)
+            all_white_moves.extend(white_moves_not_in_check)
+
+        all_black_moves = []
+        black_pieces = self.model.all_positions_occupied_by_color('black')
+        for pos in black_pieces:
+            moves = self.model.get_available_moves(pos)
+            black_moves_not_in_check = self.filter_check_moves(pos, moves)
+            all_black_moves.extend(black_moves_not_in_check)
+
+        self.model.all_available_moves['white'] = all_white_moves
+        self.model.all_available_moves['black'] = all_black_moves
+
+    def check_for_mate(self):
+        color_of_in_mate = self.model.player_turn
+        is_in_check = self.model.is_king_under_check(color_of_in_mate)
+        can_move = self.model.all_available_moves[color_of_in_mate]
+        return is_in_check and not can_move
+
+    def check_for_stalemate(self):
+        is_in_check = self.model.is_king_under_check(self.model.player_turn)
+        can_move = self.model.all_available_moves[self.model.player_turn]
+        return not is_in_check and not can_move
 
     def start_new_game(self, view):
         self.view = view

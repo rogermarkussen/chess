@@ -68,9 +68,9 @@ class View:
 
     def __create_move_display(self):
         Label(self.parent, text='Utførte trekk', font=('Arial', 18)).grid(row=0, column=1, sticky=S)
-        frame = Frame(self.parent, height=10, width=20)
+        frame = Frame(self.parent, height=10, width=24)
         self.moves_display = Text(
-            frame, padx=10, pady=10, height=10, width=20, spacing3=4, tabs=50,
+            frame, padx=10, pady=10, height=10, width=24, spacing3=4, tabs=50,
             state=DISABLED)
         self.moves_display.pack(side=LEFT, fill=Y)
         frame.grid(row=1, column=1, padx=50, pady=0, sticky=N)
@@ -127,6 +127,7 @@ class View:
     def reset_highlight_list(self):
         self.canvas.itemconfig(self.color_dark, fill=self.color_dark)
         self.canvas.itemconfig(self.color_light, fill=self.color_light)
+        self.highlighted_squares = []
 
     def update_move_history(self, move_nr, color, move):
         self.moves_display.config(state=NORMAL)
@@ -139,6 +140,22 @@ class View:
         self.moves_display.config(state=DISABLED)
         self.moves_display.yview(END)
 
+    def add_check_to_move_history(self):
+        self.moves_display.config(state=NORMAL)
+        self.moves_display.insert(INSERT, '+')
+        self.moves_display.config(state=DISABLED)
+
+    def add_mate_to_move_history(self, player_won):
+        self.moves_display.config(state=NORMAL)
+        result_text = '#(1-0)' if player_won == 'white' else '#(0-1)'
+        self.moves_display.insert(INSERT, result_text)
+        self.moves_display.config(state=DISABLED)
+
+    def add_stalemate_to_move_history(self):
+        self.moves_display.config(state=NORMAL)
+        self.moves_display.insert(INSERT, '(=)')
+        self.moves_display.config(state=DISABLED)
+
     def update_bottom_label(self, text):
         self.bottom_label['text'] = text
 
@@ -149,7 +166,6 @@ class View:
 
     def reset_board_state(self):
         self.selected_piece_position = None
-        self.highlighted_squares = []
         self.reset_highlight_list()
 
     def reset_chessboard(self):
