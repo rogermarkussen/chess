@@ -12,7 +12,6 @@ def calc_piece_coordinate(pos):
 class View:
 
     canvas = None
-    message_box = None
     moves_display = None
     bottom_label = None
     selected_piece_position = None
@@ -25,11 +24,11 @@ class View:
     def __init__(self, parent, controller):
         self.controller = controller
         self.parent = parent
-        self.create_visual()
+        self.__create_visual()
         self.canvas.bind('<Button-1>', self.controller.on_square_clicked)
         self.controller.start_new_game(self)
 
-    def create_visual(self):
+    def __create_visual(self):
         self.__create_menu()
         self.__create_canvas()
         self.__draw_board()
@@ -63,6 +62,23 @@ class View:
                                              fill=active_color, tags=('square-{}'.format(position), active_color))
                 active_color = self.__change_color(active_color)
 
+    def __create_bottom_label(self):
+        self.bottom_label = Label(self.parent, text='Hvit skal starte spillet', font=('Arial', 15))
+        self.bottom_label.grid(row=25, column=0, padx=10, pady=10)
+
+    def __create_move_display(self):
+        Label(self.parent, text='Utførte trekk', font=('Arial', 18)).grid(row=0, column=1, sticky=S)
+        frame = Frame(self.parent, height=10, width=20)
+        self.moves_display = Text(
+            frame, padx=10, pady=10, height=10, width=20, spacing3=4, tabs=50,
+            state=DISABLED)
+        self.moves_display.pack(side=LEFT, fill=Y)
+        frame.grid(row=1, column=1, padx=50, pady=0, sticky=N)
+        scrollbar = Scrollbar(frame)
+        scrollbar.pack(side=RIGHT, fill=Y)
+        self.moves_display.config(yscrollcommand=scrollbar.set)
+        scrollbar.config(command=self.moves_display.yview)
+
     def __draw_highlight_square(self, pos):
         self.canvas.itemconfig('square-{}'.format(pos), fill=self.color_highlight)
 
@@ -83,10 +99,9 @@ class View:
         for pos, piece in board_model.items():
             self.__draw_single_piece(pos, piece)
 
-    def delete_single_piece(self, pos):
-        self.canvas.delete(pos)
-
-    def make_move(self, pos_from, pos_to, piece, en_passant):
+    def make_move(self, pos_from, pos_to, piece, type_of_move):
+        if pos_to not in self.highlighted_squares:
+            return
         row = pos_from[1]
         piece_abbr = piece['name'][0].upper() if piece['name'] != 'Knight' else 'N'
         if piece['color'] == 'black':
@@ -95,41 +110,21 @@ class View:
         self.canvas.delete(pos_to)
         self.__draw_single_piece(pos_to, piece_abbr)
         self.selected_piece_position = None
-        if en_passant:
+        if type_of_move == 'en_passant':
             captured_pawn_pos = pos_to[0] + pos_from[1]
             self.canvas.delete(captured_pawn_pos)
-        if piece['name'] == 'King' and pos_from[0] == 'e' and pos_to[0] == 'g':
-            # Castle short
-            rook_piece = {'name': 'Rook', 'color': piece['color']}
-            self.make_move('h{}'.format(row), 'f{}'.format(row), rook_piece, False)
-        if piece['name'] == 'King' and pos_from[0] == 'e' and pos_to[0] == 'c':
-            # Castle long
-            rook_piece = {'name': 'Rook', 'color': piece['color']}
-            self.make_move('a{}'.format(row), 'd{}'.format(row), rook_piece, False)
-
-    def __create_bottom_label(self):
-        self.bottom_label = Label(self.parent, text='Hvit skal starte spillet', font=('Arial', 15))
-        self.bottom_label.grid(row=25, column=0, padx=10, pady=10)
-
-    def __create_move_display(self):
-        Label(self.parent, text='Utførte trekk', font=('Arial', 18)).grid(row=0, column=1, sticky=S)
-        frame = Frame(self.parent, height=10, width=20)
-        self.moves_display = Text(
-            frame, padx=10, pady=10, height=10, width=20, spacing3=4, tabs=50,
-            state=DISABLED)
-        self.moves_display.pack(side=LEFT, fill=Y)
-        frame.grid(row=1, column=1, padx=50, pady=0, sticky=N)
-        scrollbar = Scrollbar(frame)
-        scrollbar.pack(side=RIGHT, fill=Y)
-        self.moves_display.config(yscrollcommand=scrollbar.set)
-        scrollbar.config(command=self.moves_display.yview)
+        rook_piece = {'name': 'Rook', 'color': piece['color']}
+        if type_of_move == 'castle_short':
+            self.make_move('h{}'.format(row), 'f{}'.format(row), rook_piece, '')
+        if type_of_move == 'castle_long':
+            self.make_move('a{}'.format(row), 'd{}'.format(row), rook_piece, '')
 
     def update_highlight_list(self, highlight_list):
         self.highlighted_squares = highlight_list
         for pos in highlight_list:
             self.__draw_highlight_square(pos)
 
-    def reset_highlight(self):
+    def reset_highlight_list(self):
         self.canvas.itemconfig(self.color_dark, fill=self.color_dark)
         self.canvas.itemconfig(self.color_light, fill=self.color_light)
 
@@ -144,12 +139,20 @@ class View:
         self.moves_display.config(state=DISABLED)
         self.moves_display.yview(END)
 
-    def reset_history(self):
+    def update_bottom_label(self, text):
+        self.bottom_label['text'] = text
+
+    def reset_move_history(self):
         self.moves_display.config(state=NORMAL)
         self.moves_display.delete(1.0, END)
-        self.bottom_label['text'] = 'Hvit skal starte spillet'
+        self.update_bottom_label('Hvit skal starte spillet')
 
     def reset_board_state(self):
         self.selected_piece_position = None
         self.highlighted_squares = []
-        self.reset_highlight()
+        self.reset_highlight_list()
+
+    def reset_chessboard(self):
+        self.reset_board_state()
+        self.draw_all_pieces(START_POSITION)
+        self.reset_move_history()

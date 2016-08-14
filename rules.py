@@ -1,4 +1,3 @@
-from copy import deepcopy
 import controller as contr
 from config import *
 
@@ -93,7 +92,6 @@ def pawn_moves(model, pos, color):
             allowed_moves.append(destination_attack)
     # En passant
     if start_row == en_passant_row:
-        can_do_en_passant = ''
         enemy_pawn_on_side_and_free_pos_in_front = []
         for a in range(-1, 2, 2):
             side_position = (start_col + a, start_row)
@@ -133,7 +131,7 @@ def get_castle_moves(model, pos, color):
     castle_moves = []
     row = '1' if color == 'white' else '8'
     enemy = 'white' if color == 'black' else 'black'
-    enemy_available_moves = model.moves[enemy]
+    enemy_available_moves = model.all_available_moves[enemy]
     king_pos = 'e{}'.format(row)
     if pos != king_pos:
         return []
