@@ -74,6 +74,8 @@ def pawn_moves(model, pos, color):
     # Moving forward
     forbidden = model.all_occupied_positions()
     num_dest = start_col, start_row + direction
+    if not is_on_board(*num_dest):
+        return []
     destination = contr.get_text_position(*num_dest)
     if destination not in forbidden:
         allowed_moves.append(destination)

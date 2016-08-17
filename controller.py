@@ -1,5 +1,6 @@
 from config import *
 import model
+import promote
 
 
 def get_text_position(column, row):
@@ -44,7 +45,7 @@ class Controller:
             available_moves = self.filter_check_moves(selected_piece_pos, available_moves)
             if position in available_moves:
                 self.make_move(selected_piece_pos, position, piece)
-                norwegian_color_turn = 'hvit' if self.model.player_turn == 'black' else 'sort'
+                norwegian_color_turn = 'hvit' if self.model.player_turn == 'white' else 'sort'
                 self.view.update_bottom_label('Det er {} sin tur'.format(norwegian_color_turn))
                 self.produce_all_available_moves()
                 if self.check_for_mate():
@@ -70,13 +71,40 @@ class Controller:
         return copy_of_moves
 
     def make_move(self, pos_from, pos_to, piece):
-        # type_of_move = 'normal', 'castle_short', 'castle_long', 'en_passant'
+        # type_of_move = 'normal', 'castle_short', 'castle_long', 'en_passant', 'promoting'
         type_of_move = self.model.get_type_of_move(pos_from, pos_to)
+        if type_of_move == 'promoting':
+            promote.PromoteDialog(self.view.canvas, piece['color'], pos_from, pos_to, self)
+            return
         self.model.update_game_stats(pos_from, pos_to, type_of_move)
         self.model.move(pos_from, pos_to, type_of_move)
         self.view.make_move(pos_from, pos_to, piece, type_of_move)
         self.view.update_move_history(self.model.move_nr, piece['color'], self.model.history[-1])
         self.view.reset_board_state()
+
+    def make_promotion_move(self, pos_from, pos_to, piece, color, choosing_view):
+        choosing_view.destroy_choosing_view()
+        self.model.update_game_stats(pos_from, pos_to, 'promoting', piece)
+        self.model.do_promotion_move(pos_from, pos_to, piece)
+        self.view.make_move(pos_from, pos_to, {'name': 'Pawn', 'color': color}, 'promoting', piece)
+        self.view.update_move_history(self.model.move_nr, color, self.model.history[-1])
+        self.view.reset_board_state()
+        self.view.canvas.bind('<Button-1>', self.on_square_clicked)
+        norwegian_color_turn = 'hvit' if self.model.player_turn == 'white' else 'sort'
+        self.view.update_bottom_label('Det er {} sin tur'.format(norwegian_color_turn))
+        self.produce_all_available_moves()
+        if self.check_for_mate():
+            player_won = 'white' if self.model.player_turn == 'black' else 'black'
+            norwegian_color_won = 'hvit' if self.model.player_turn == 'black' else 'sort'
+            self.view.update_bottom_label('Sjakk matt! Det er {} som har vunnet.'.format(norwegian_color_won))
+            self.view.add_mate_to_move_history(player_won)
+            return
+        if self.check_for_stalemate():
+            self.view.update_bottom_label('Patt! Partiet endte med remis.')
+            self.view.add_stalemate_to_move_history()
+            return
+        if self.model.is_king_under_check(self.model.player_turn):
+            self.view.add_check_to_move_history()
 
     def produce_all_available_moves(self):
         all_white_moves = []

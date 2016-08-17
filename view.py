@@ -99,13 +99,15 @@ class View:
         for pos, piece in board_model.items():
             self.__draw_single_piece(pos, piece)
 
-    def make_move(self, pos_from, pos_to, piece, type_of_move):
+    def make_move(self, pos_from, pos_to, piece, type_of_move, promoting_piece=''):
         if pos_to not in self.highlighted_squares:
             return
         row = pos_from[1]
         piece_abbr = piece['name'][0].upper() if piece['name'] != 'Knight' else 'N'
         if piece['color'] == 'black':
             piece_abbr = piece_abbr.lower()
+        if type_of_move == 'promoting':
+            piece_abbr = promoting_piece
         self.canvas.delete(pos_from)
         self.canvas.delete(pos_to)
         self.__draw_single_piece(pos_to, piece_abbr)

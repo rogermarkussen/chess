@@ -23,12 +23,14 @@ class Model(dict):
         for pos, value in START_POSITION.items():
             self[pos] = value
 
-    def get_movetext(self, pos_from, pos_to, piece_dest):
+    def get_movetext(self, pos_from, pos_to, piece_dest, type_of_move, promoting_piece=''):
         hit = 'x' if piece_dest else ''
         piece_name = self[pos_from].upper() if self[pos_from].lower() != 'p' else ''
         if piece_dest:
             piece_name = self[pos_from].upper() if self[pos_from].lower() != 'p' else pos_from[0]
         movetext = piece_name + hit + pos_to
+        if type_of_move == 'promoting':
+            movetext += '={}'.format(promoting_piece.upper())
         if self[pos_from].lower() not in ['r', 'n']:
             return movetext
         for pos, piece_abbr in self.items():
@@ -41,7 +43,7 @@ class Model(dict):
                         movetext = piece_name + pos_from[1] + hit + pos_to
         return movetext
 
-    def update_game_stats(self, pos_from, pos_to, type_of_move):
+    def update_game_stats(self, pos_from, pos_to, type_of_move, promoting_piece=''):
         piece = self.get_piece_at_position(pos_from)
         piece_name = piece['name']
         color = piece['color']
@@ -57,7 +59,7 @@ class Model(dict):
         self.halfmove_clock += 1
         if piece_name == 'Pawn':
             self.halfmove_clock = 0
-        movetext = self.get_movetext(pos_from, pos_to, is_attacking)
+        movetext = self.get_movetext(pos_from, pos_to, is_attacking, type_of_move, promoting_piece)
         if is_attacking:
             self.captured_pieces[enemy].append(piece_dest)
             self.halfmove_clock = 0
@@ -90,6 +92,10 @@ class Model(dict):
         if type_of_move == 'castle_long':
             self['d{}'.format(row)] = self.pop('a{}'.format(row), None)
 
+    def do_promotion_move(self, pos_from, pos_to, piece):
+        del self[pos_from]
+        self[pos_to] = piece
+
     def get_type_of_move(self, pos_from, pos_to):
         piece = self.get_piece_at_position(pos_from)
         piece_name = piece['name']
@@ -102,6 +108,8 @@ class Model(dict):
         # Check for en-passant
         if piece_name == 'Pawn' and pos_to not in self.keys() and pos_to[0] != pos_from[0]:
             type_of_move = 'en_passant'
+        if piece_name == 'Pawn' and pos_to[1] in ['1', '8']:
+            type_of_move = 'promoting'
         return type_of_move
 
     def will_move_cause_check(self, pos_from, pos_to):
