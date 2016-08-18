@@ -80,6 +80,8 @@ class Controller:
         self.model.move(pos_from, pos_to, type_of_move)
         self.view.make_move(pos_from, pos_to, piece, type_of_move)
         self.view.update_move_history(self.model.move_nr, piece['color'], self.model.history[-1])
+        if self.model.captured_pieces['white'] or self.model.captured_pieces['black']:
+            self.view.create_captured_pieces(self.model.captured_pieces)
         self.view.reset_board_state()
 
     def make_promotion_move(self, pos_from, pos_to, piece, color, choosing_view):
@@ -88,6 +90,8 @@ class Controller:
         self.model.do_promotion_move(pos_from, pos_to, piece)
         self.view.make_move(pos_from, pos_to, {'name': 'Pawn', 'color': color}, 'promoting', piece)
         self.view.update_move_history(self.model.move_nr, color, self.model.history[-1])
+        if self.model.captured_pieces['white'] or self.model.captured_pieces['black']:
+            self.view.create_captured_pieces(self.model.captured_pieces)
         self.view.reset_board_state()
         self.view.canvas.bind('<Button-1>', self.on_square_clicked)
         norwegian_color_turn = 'hvit' if self.model.player_turn == 'white' else 'sort'

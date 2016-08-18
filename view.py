@@ -14,6 +14,7 @@ class View:
     canvas = None
     moves_display = None
     bottom_label = None
+    captured_pieces = None
     selected_piece_position = None
     highlighted_squares = []
     images = {}
@@ -78,6 +79,26 @@ class View:
         scrollbar.pack(side=RIGHT, fill=Y)
         self.moves_display.config(yscrollcommand=scrollbar.set)
         scrollbar.config(command=self.moves_display.yview)
+
+    def create_captured_pieces(self, captured_pieces):
+        Label(self.parent, text='Brikker slått', font=('Arial', 18)).grid(row=2, column=1, sticky=S)
+        self.captured_pieces = Canvas(self.parent, height=80, width=288)
+        self.captured_pieces.grid(row=3, column=1, padx=50, sticky=S)
+        x_coords = [144, 129, 120, 111, 102, 93, 84, 75, 66, 57, 48, 39, 30, 21, 12]
+        nr_of_white = len(captured_pieces['white'])
+        nr_of_black = len(captured_pieces['black'])
+        start_white_x_coord = x_coords[nr_of_white - 1]
+        start_black_x_coord = x_coords[nr_of_black - 1]
+        for index, piece in enumerate(captured_pieces['white']):
+            filename = './pieces_image/mini/{}_white_small.png'.format(piece.lower())
+            if filename not in self.images:
+                self.images[filename] = PhotoImage(file=filename)
+            self.captured_pieces.create_image(18 * index + start_white_x_coord, 12, image=self.images[filename])
+        for index, piece in enumerate(captured_pieces['black']):
+            filename = './pieces_image/mini/{}_black_small.png'.format(piece.lower())
+            if filename not in self.images:
+                self.images[filename] = PhotoImage(file=filename)
+            self.captured_pieces.create_image(18 * index + start_black_x_coord, 50, image=self.images[filename])
 
     def __draw_highlight_square(self, pos):
         self.canvas.itemconfig('square-{}'.format(pos), fill=self.color_highlight)
